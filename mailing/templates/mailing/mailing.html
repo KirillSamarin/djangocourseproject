@@ -1,0 +1,44 @@
+{% extends 'mailing/base.html' %}
+
+{% block title %}Просмотр рассылки{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
+        <h1 class="display-4">Информация о рассылке</h1>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card mb-4 box-shadow">
+                <div class="card-header">
+                    <h4 class="my-0 font-weight-normal">{{ mailing.status }}</h4>
+                </div>
+                <div class="card-body">
+                    <p><strong>Начало:</strong> {{ mailing.start_time|date:"d.m.Y H:i" }}</p>
+                    <p><strong>Окончание:</strong> {{ mailing.end_time|date:"d.m.Y H:i" }}</p>
+                    <p><strong>Сообщение:</strong> {{ mailing.message.topic }}</p>
+
+                    <h5 class="mt-4">Текст сообщения:</h5>
+                    <div class="border p-3">{{ mailing.message.text|linebreaks }}</div>
+
+                    <h5 class="mt-4">Получатели ({{ mailing.receivers.count }}):</h5>
+                    <ul class="list-group">
+                        {% for receiver in mailing.receivers.all %}
+                        <li class="list-group-item">{{ receiver.full_name }} &lt;{{ receiver.email }}&gt;</li>
+                        {% empty %}
+                        <li class="list-group-item">Получатели не указаны</li>
+                        {% endfor %}
+                    </ul>
+
+                    <div class="mt-3">
+                        <a href="{% url 'mailing:mailing-update' mailing.pk %}" class="btn btn-warning">Изменить</a>
+                        <a href="{% url 'mailing:home' %}" class="btn btn-secondary">На главную</a>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

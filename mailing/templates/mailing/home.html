@@ -1,0 +1,17 @@
+{% extends 'mailing/base.html' %}
+
+{% block title %}Главная{% endblock %}
+
+{% block content %}
+
+<div class="row">
+    {% if user.is_authenticated %}
+        <p>Количество созданных рассылок: {{ mailing_count }}</p>
+        <p>Количество активных рассылок: {{ mailing_active_count }}</p>
+        <p>Количество получателей рассылок: {{ receivers_count }}</p>
+        <p>Количество успешных рассылок: {{ successful_mailings }}</p>
+        <p>Количество неуспешных рассылок: {{ unsuccessful_mailings }}</p>
+        <p>Количество отправленных сообщений: {{ messages_count }}</p>
+    {% endif %}
+</div>
+{% endblock %}

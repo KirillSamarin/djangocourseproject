@@ -1,0 +1,42 @@
+{% extends 'mailing/base.html' %}
+
+{% block title %}{% if action == 'block' %}Блокировка{% else %}Разблокировка{% endif %} пользователя{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <h4>{% if action == 'block' %}Блокировка пользователя{% else %}Разблокировка пользователя{% endif %}</h4>
+        </div>
+        <div class="card-body">
+            <p>Вы уверены, что хотите 
+                {% if action == 'block' %}
+                    <strong>заблокировать</strong> пользователя
+                {% else %}
+                    <strong>разблокировать</strong> пользователя
+                {% endif %}
+                <strong>{{ object.email }}</strong>?
+            </p>
+            
+            {% if action == 'block' %}
+            <div class="alert alert-warning">
+                <strong>Внимание!</strong> При блокировке пользователя:
+                <ul>
+                    <li>Пользователь не сможет войти в систему</li>
+                    <li>Все активные рассылки пользователя будут остановлены</li>
+                    <li>Пользователь не сможет создавать новые рассылки</li>
+                </ul>
+            </div>
+            {% endif %}
+            
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn {% if action == 'block' %}btn-warning{% else %}btn-success{% endif %}">
+                    {% if action == 'block' %}Заблокировать{% else %}Разблокировать{% endif %}
+                </button>
+                <a href="{% url 'mailing:user_list' %}" class="btn btn-secondary">Отмена</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

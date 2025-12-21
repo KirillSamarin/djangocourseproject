@@ -1,0 +1,29 @@
+{% extends 'mailing/base.html' %}
+
+{% block title %}Просмотр сообщения{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
+        <h1 class="display-4">Информация о сообщении</h1>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card mb-4 box-shadow">
+                <div class="card-header">
+                    <h4 class="my-0 font-weight-normal">{{ message.topic }}</h4>
+                </div>
+                <div class="card-body">
+                    <p><strong>Текст:</strong> {{ message.text }}</p>
+                    <div class="mt-4">
+                        <a href="{% url 'mailing:message-update' message.id %}" class="btn btn-warning">Редактировать</a>
+                        <a href="{% url 'mailing:message-delete' message.id %}" class="btn btn-danger">Удалить</a>
+                        <a href="{% url 'mailing:home' %}" class="btn btn-secondary">На главную</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

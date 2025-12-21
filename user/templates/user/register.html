@@ -1,0 +1,22 @@
+{% extends 'mailing/base.html' %}
+
+{% block title %}Регистрация нового пользователя{% endblock %}
+
+{% block content %}
+  <h2>Регистрация</h2>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-info">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <p class="text-muted">
+      После регистрации вам будет отправлено письмо для подтверждения email адреса.
+    </p>
+    <button type="submit" class="btn btn-primary">Зарегистрироваться</button>
+  </form>
+{% endblock %}

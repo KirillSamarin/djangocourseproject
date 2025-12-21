@@ -1,0 +1,16 @@
+{% extends 'mailing/base.html' %}
+
+{% block title %}Редактирование получателя{% endblock %}
+
+{% block content %}
+<h2>Редактирование получателя</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div class="mt-3">
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+        <a href="{% url 'mailing:receiver-delete' object.pk %}" class="btn btn-danger">Удалить получателя</a>
+        <a href="{% url 'mailing:receiver' object.pk %}" class="btn btn-secondary">Отмена</a>
+    </div>
+</form>
+{% endblock %}

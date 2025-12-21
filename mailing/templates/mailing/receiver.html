@@ -1,0 +1,31 @@
+{% extends 'mailing/base.html' %}
+
+{% block title %}Просмотр получателя{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
+        <h1 class="display-4">Информация о получателе</h1>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card mb-4 box-shadow">
+                <div class="card-header">
+                    <h4 class="my-0 font-weight-normal">{{ receiver.email }}</h4>
+                </div>
+                <div class="card-body">
+                    <p><strong>Email:</strong> {{ receiver.email }}</p>
+                    <p><strong>ФИО:</strong> {{ receiver.full_name }}</p>
+                    <p><strong>Комментарий:</strong> {{ receiver.comm }}</p>
+                    <div class="mt-4">
+                        <a href="{% url 'mailing:receiver-update' receiver.id %}" class="btn btn-warning">Редактировать</a>
+                        <a href="{% url 'mailing:receiver-delete' receiver.id %}" class="btn btn-danger">Удалить</a>
+                        <a href="{% url 'mailing:home' %}" class="btn btn-secondary">На главную</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

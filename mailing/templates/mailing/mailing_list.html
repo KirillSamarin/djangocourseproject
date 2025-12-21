@@ -1,0 +1,72 @@
+{% extends 'mailing/base.html' %}
+
+{% block title %}Мои рассылки{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>
+        {% if user.groups.all.0.name == 'Менеджеры' %}
+            Все рассылки
+        {% else %}
+            Мои рассылки
+        {% endif %}
+    </h2>
+    
+    <a href="{% url 'mailing:mailing_create' %}" class="btn btn-primary mb-3">
+        Создать новую рассылку
+    </a>
+
+    {% if user.groups.all.0.name == 'Менеджеры' and mailing.status == 'Запущена' %}
+    <a href="{% url 'mailing:mailing_disable_quick' mailing.id %}"
+       class="btn btn-sm btn-danger"
+       onclick="return confirm('Отключить рассылку?')">
+        Отключить
+    </a>
+    {% endif %}
+    
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Тема</th>
+                <th>Владелец</th>
+                <th>Статус</th>
+                <th>Начало</th>
+                <th>Окончание</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for mailing in mailings %}
+            <tr>
+                <td>{{ mailing.id }}</td>
+                <td>{{ mailing.message.topic }}</td>
+                <td>{{ mailing.owner.email }}</td>
+                <td>
+                    <span class="badge 
+                        {% if mailing.status == 'Запущена' %}bg-success
+                        {% elif mailing.status == 'Создана' %}bg-warning
+                        {% elif mailing.status == 'Завершена' %}bg-secondary
+                        {% endif %}">
+                        {{ mailing.status }}
+                    </span>
+                </td>
+                <td>{{ mailing.start_time|date:"d.m.Y H:i" }}</td>
+                <td>{{ mailing.end_time|date:"d.m.Y H:i" }}</td>
+                <td>
+                    <a href="{% url 'mailing:mailing_detail' mailing.id %}" class="btn btn-sm btn-info">Просмотр</a>
+                    {% if user == mailing.owner or user.groups.all.0.name == 'Менеджеры' %}
+                    <a href="{% url 'mailing:mailing_edit' mailing.id %}" class="btn btn-sm btn-warning">Редактировать</a>
+                    <a href="{% url 'mailing:mailing_delete' mailing.id %}" class="btn btn-sm btn-danger">Удалить</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="text-center">Нет рассылок</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
