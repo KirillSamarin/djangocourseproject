@@ -1,0 +1,38 @@
+{% extends 'mailing/base.html' %}
+
+{% block title %}Мои попытки рассылок{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>
+        Попытки рассылок
+    </h2>
+    
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Время попытки</th>
+                <th>Статус</th>
+                <th>Ответ почтового сервера</th>
+                <th>Статус рассылки</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for mailing_attempt in mailing_attempts %}
+            <tr>
+                <td>{{ mailing_attempt.id }}</td>
+                <td>{{ mailing_attempt.attempt_time}}</td>
+                <td>{{ mailing_attempt.status }}</td>
+                <td>{{ mailing_attempt.server_response }}</td>
+                <td>{{ mailing_attempt.mailing }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="text-center">Нет попыток рассылок</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

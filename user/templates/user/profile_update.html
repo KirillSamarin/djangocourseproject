@@ -1,0 +1,45 @@
+{% extends 'mailing/base.html' %}
+
+{% block title %}Редактирование профиля{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
+        <h1 class="display-4">Редактирование профиля</h1>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card mb-4 box-shadow">
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        {% for field in form %}
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    {{ field.label }}
+                                </label>
+                                {{ field }}
+                                {% if field.errors %}
+                                    <div class="text-danger small">
+                                        {{ field.errors }}
+                                    </div>
+                                {% endif %}
+                                {% if field.help_text %}
+                                    <div class="form-text">{{ field.help_text }}</div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">Сохранить</button>
+                            <a href="{% url 'user:profile' %}" class="btn btn-secondary">Отмена</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

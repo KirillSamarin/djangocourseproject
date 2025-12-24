@@ -32,15 +32,19 @@
         <form method="post" action="{% url 'user:logout' %}" style="display: inline;">
             {% csrf_token %}
             <button type="submit" class="p-2 btn btn-outline-primary">Выйти</button>
+            <a class="p-2 btn btn-outline-primary" href="/mailing/home/">Главная</a>
+            <a class="p-2 btn btn-outline-primary" href="/mailing/mailing_list/">Рассылки</a>
+            <a class="p-2 btn btn-outline-primary" href="/mailing/message_list/">Сообщения</a>
+            <a class="p-2 btn btn-outline-primary" href="/mailing/receiver_list/">Получатели</a>
+            <a class="p-2 btn btn-outline-primary" href="/mailing/mailing_attempts_list/">Попытки рассылок</a>
         </form>
         {% else %}
-        {% if user.groups.all.0.name == 'Менеджеры' %}
-            <li class="nav-item">
-                <a class="nav-link" href="{% url 'mailing:user_list' %}">
+        {% if user.groups.all.0name == 'Менеджеры' %}
+            <a class="nav-link" href="{% url 'mailing:user_list' %}">
                     Управление пользователями
-                </a>
-            </li>
+            </a>
         {% endif %}
+        <a class="p-2 btn btn-outline-primary" href="/mailing/home/">Главная</a>
         <a class="p-2 btn btn-outline-primary" href="/user/login/">Войти</a>
         <a class="p-2 btn btn-outline-primary" href="/user/register/">Регистрация</a>
         {% endif %}

@@ -1,0 +1,53 @@
+{% extends 'mailing/base.html' %}
+
+{% block title %}Мои получатели{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>
+        {% if user.groups.all.0.name == 'Менеджеры' %}
+            Все сообщения
+        {% else %}
+            Мои сообщения
+        {% endif %}
+    </h2>
+    
+    <a href="{% url 'mailing:message-create' %}" class="btn btn-primary mb-3">
+        Создать нового получателя
+    </a>
+    
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>email</th>
+                <th>Полное имя</th>
+                <th>Комментарий</th>
+                <th>Владелец</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for receiver in receivers %}
+            <tr>
+                <td>{{ receiver.id }}</td>
+                <td>{{ receiver.email }}</td>
+                <td>{{ receiver.full_name }}</td>
+                <td>{{ receiver.comm }}</td>
+                <td>{{ receiver.owner }}</td>
+                <td>
+                    <a href="{% url 'mailing:receiver' receiver.id %}" class="btn btn-sm btn-info">Просмотр</a>
+                    {% if user == message.owner or user.groups.all.0.name == 'Менеджеры' %}
+                    <a href="{% url 'mailing:receiver-update' receiver.id %}" class="btn btn-sm btn-warning">Редактировать</a>
+                    <a href="{% url 'mailing:receiver-delete' receiver.id %}" class="btn btn-sm btn-danger">Удалить</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="text-center">Нет сообщений</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

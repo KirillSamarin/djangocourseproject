@@ -1,0 +1,33 @@
+{% extends 'mailing/base.html' %}
+
+{% block title %}Ваш профиль{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
+        <h1 class="display-4">Ваш профиль</h1>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card mb-4 box-shadow">
+                <div class="card-header">
+                    <h4 class="my-0 font-weight-normal">{{ email }}</h4>
+                </div>
+                <div class="card-body">
+                    <p><strong>Email:</strong> {{ email }}</p>
+                    <p><strong>Имя:</strong> {{ first_name }}</p>
+                    <p><strong>Фамилия:</strong> {{ last_name }}</p>
+                    <p><strong>Аватар:</strong> {{ avatar }}</p>
+                    <p><strong>Номер телефона:</strong> {{ phone_number }}</p>
+                    <p><strong>Страна:</strong> {{ country }}</p>
+                    <div class="mt-4">
+                        <a href="{% url 'user:profile-update' %}" class="btn btn-warning">Редактировать</a>
+                        <a href="{% url 'mailing:home' %}" class="btn btn-secondary">На главную</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends 'mailing/base.html' %}
+
+{% block title %}Мои сообщения{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>
+        {% if user.groups.all.0.name == 'Менеджеры' %}
+            Все сообщения
+        {% else %}
+            Мои сообщения
+        {% endif %}
+    </h2>
+    
+    <a href="{% url 'mailing:message-create' %}" class="btn btn-primary mb-3">
+        Создать новое сообщение
+    </a>
+    
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Тема</th>
+                <th>Владелец</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for message in messages %}
+            <tr>
+                <td>{{ message.id }}</td>
+                <td>{{ message.topic }}</td>
+                <td>{{ message.owner.email }}</td>
+                <td>
+                    <a href="{% url 'mailing:message' message.id %}" class="btn btn-sm btn-info">Просмотр</a>
+                    {% if user == message.owner or user.groups.all.0.name == 'Менеджеры' %}
+                    <a href="{% url 'mailing:message-update' message.id %}" class="btn btn-sm btn-warning">Редактировать</a>
+                    <a href="{% url 'mailing:message-delete' message.id %}" class="btn btn-sm btn-danger">Удалить</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="text-center">Нет сообщений</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

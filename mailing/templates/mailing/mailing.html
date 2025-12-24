@@ -33,6 +33,10 @@
 
                     <div class="mt-3">
                         <a href="{% url 'mailing:mailing-update' mailing.pk %}" class="btn btn-warning">Изменить</a>
+                        <a href="{% url 'mailing:mailing-start' mailing.pk %}"
+                           class="btn btn-success">
+                                Запустить рассылку
+                        </a>
                         <a href="{% url 'mailing:home' %}" class="btn btn-secondary">На главную</a>
                     </div>
 

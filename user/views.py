@@ -1,4 +1,6 @@
-from django.views.generic.edit import CreateView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import TemplateView
+from django.views.generic.edit import UpdateView
 from django.urls import reverse_lazy
 from django.contrib.auth.views import (
     PasswordResetView,
@@ -6,28 +8,44 @@ from django.contrib.auth.views import (
     PasswordResetConfirmView,
     PasswordResetCompleteView,
 )
-from django.contrib.auth import login
 from django.contrib import messages
-from .forms import CustomPasswordResetForm, CustomSetPasswordForm, CustomUserCreationForm
+from .forms import CustomPasswordResetForm, CustomSetPasswordForm, CustomUserChangeForm
 from django.views.decorators.cache import cache_page
 from django.utils.decorators import method_decorator
-from django.core.cache import cache
+from .models import CustomUser
 
 
-class RegisterView(CreateView):
-    template_name = "user/register.html"
-    form_class = CustomUserCreationForm
-    success_url = reverse_lazy('mailing:home')
+class ProfileView(LoginRequiredMixin, TemplateView):
+    template_name = 'user/profile.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+
+        context.update({
+            'user': user,
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'avatar': user.avatar,
+            'phone_number': user.phone_number,
+            'country': user.country
+        })
+        return context
+
+
+class ProfileUpdateView(LoginRequiredMixin, UpdateView):
+    model = CustomUser
+    form_class = CustomUserChangeForm  # Используем форму для изменения
+    template_name = 'user/profile_update.html'
+    success_url = reverse_lazy('user:profile')
+
+    def get_object(self, queryset=None):
+        # Возвращаем текущего авторизованного пользователя
+        return self.request.user
 
     def form_valid(self, form):
-        user = form.save()
-        login(self.request, user)
-
-        # Очищаем кеш пользователя после регистрации
-        if user.id:
-            cache_key = f"user_stats_{user.id}"
-            cache.delete(cache_key)
-
+        messages.success(self.request, 'Профиль успешно обновлен!')
         return super().form_valid(form)
 
 
@@ -67,4 +85,3 @@ class CustomPasswordResetCompleteView(PasswordResetCompleteView):
     @method_decorator(cache_page(60 * 5))  # Кешируем страницу на 5 минут
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
-

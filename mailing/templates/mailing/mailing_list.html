@@ -12,7 +12,7 @@
         {% endif %}
     </h2>
     
-    <a href="{% url 'mailing:mailing_create' %}" class="btn btn-primary mb-3">
+    <a href="{% url 'mailing:mailing-create' %}" class="btn btn-primary mb-3">
         Создать новую рассылку
     </a>
 
@@ -54,10 +54,10 @@
                 <td>{{ mailing.start_time|date:"d.m.Y H:i" }}</td>
                 <td>{{ mailing.end_time|date:"d.m.Y H:i" }}</td>
                 <td>
-                    <a href="{% url 'mailing:mailing_detail' mailing.id %}" class="btn btn-sm btn-info">Просмотр</a>
+                    <a href="{% url 'mailing:mailing' mailing.id %}" class="btn btn-sm btn-info">Просмотр</a>
                     {% if user == mailing.owner or user.groups.all.0.name == 'Менеджеры' %}
-                    <a href="{% url 'mailing:mailing_edit' mailing.id %}" class="btn btn-sm btn-warning">Редактировать</a>
-                    <a href="{% url 'mailing:mailing_delete' mailing.id %}" class="btn btn-sm btn-danger">Удалить</a>
+                    <a href="{% url 'mailing:mailing-update' mailing.id %}" class="btn btn-sm btn-warning">Редактировать</a>
+                    <a href="{% url 'mailing:mailing-delete' mailing.id %}" class="btn btn-sm btn-danger">Удалить</a>
                     {% endif %}
                 </td>
             </tr>

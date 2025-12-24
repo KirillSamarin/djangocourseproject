@@ -50,12 +50,6 @@ class Command(BaseCommand):
             for receiver in receivers:
                 self.stdout.write(f"  - {receiver.full_name} <{receiver.email}>")
 
-            # Подтверждение
-            confirm = input("\nЗапустить рассылку? (y/n): ")
-            if confirm.lower() != 'y':
-                self.stdout.write("Отменено пользователем")
-                return
-
             # Запускаем рассылку
             self.process_mailing(mailing, receivers)
 
@@ -90,7 +84,7 @@ class Command(BaseCommand):
                 # Создаем успешную попытку для каждого получателя
                 MailingAttempt.objects.create(
                     mailing=mailing,
-                    status='success',
+                    status='Успешно',
                     server_response=result.get('response', 'Успешно')
                 )
             else:
@@ -101,7 +95,7 @@ class Command(BaseCommand):
                 # Создаем неуспешную попытку для каждого получателя
                 MailingAttempt.objects.create(
                     mailing=mailing,
-                    status='failed',
+                    status='Не успешно',
                     server_response=result.get('response', 'Неизвестная ошибка')
                 )
 
@@ -132,7 +126,7 @@ class Command(BaseCommand):
             ))
         else:
             self.stdout.write(self.style.ERROR(
-                f"\n✗ НИ ОДНОГО ПИСЬМА НЕ ОТПРАВЛЕНО!"
+                "\n✗ НИ ОДНОГО ПИСЬМА НЕ ОТПРАВЛЕНО!"
             ))
 
     def send_email_to_receiver(self, message, receiver):
@@ -145,7 +139,7 @@ class Command(BaseCommand):
             if receiver.comm:
                 personalized_body += f"\n\nПримечание: {receiver.comm}"
 
-            personalized_body += f"\n\n--\nЭто сообщение отправлено автоматически"
+            personalized_body += "\n\n--\nЭто сообщение отправлено автоматически"
 
             send_mail(
                 subject=message.topic,

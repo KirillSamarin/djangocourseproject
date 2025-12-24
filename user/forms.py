@@ -2,7 +2,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from .models import CustomUser
 from allauth.account.forms import SignupForm
 from django import forms
-from django.contrib.auth.forms import PasswordResetForm, SetPasswordForm
+from django.contrib.auth.forms import PasswordResetForm, SetPasswordForm, UserChangeForm
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -32,6 +32,19 @@ class CustomUserCreationForm(SignupForm):
         if CustomUser.objects.filter(email=email).exists():
             raise forms.ValidationError("Пользователь с таким email уже существует")
         return email
+
+
+class CustomUserChangeForm(UserChangeForm):
+    password = None
+
+    class Meta:
+        model = CustomUser
+        fields = ['email', 'first_name', 'last_name', 'avatar', 'phone_number', 'country']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name, field in self.fields.items():
+            field.widget.attrs['class'] = 'form-control'
 
 class CustomPasswordResetForm(PasswordResetForm):
     email = forms.EmailField(

@@ -1,6 +1,6 @@
 from django.views.generic import DetailView, CreateView, DeleteView, TemplateView
 from mailing.forms import ReceiverForm, MessageForm, MailingForm
-from mailing.models import ReceiverMailing, Message
+from mailing.models import ReceiverMailing, Message, MailingAttempt
 from mailing.permissions import OwnerOrManagerRequiredMixin, user_is_manager
 from django.views.generic import ListView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -14,6 +14,8 @@ from django.views.decorators.cache import cache_page
 from django.utils.decorators import method_decorator
 from django.core.cache import cache
 from django.db.models import Count, Q
+from io import StringIO
+from django.core.management import call_command
 
 
 # Общие View
@@ -61,8 +63,28 @@ class Home(LoginRequiredMixin, TemplateView):
 
         return context
 
+class ReceiverListView(LoginRequiredMixin, ListView):
+    model = ReceiverMailing
+    template_name = 'mailing/receiver_list.html'
+    context_object_name = 'receivers'
 
-# Получатели - упрощенная версия
+    def get_queryset(self):
+        user = self.request.user
+
+        cache_key = f"receivers_list_{user.id}"
+        cached_receivers = cache.get(cache_key)
+
+        if cached_receivers:
+            return cached_receivers
+
+        if user_is_manager(user):
+            receivers = ReceiverMailing.objects.select_related('owner').all()
+        else:
+            receivers = ReceiverMailing.objects.select_related('owner').filter(owner=user)
+
+        cache.set(cache_key, receivers, 60)
+        return receivers
+
 class ReceiverDetail(LoginRequiredMixin, DetailView):
     model = ReceiverMailing
     template_name = 'mailing/receiver.html'
@@ -94,8 +116,9 @@ class ReceiverCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        # Очищаем кеш после создания получателя
-        cache.delete_pattern('*user_home_stats_*')
+        # Очищаем кеш текущего пользователя
+        user = self.request.user
+        cache.delete(f"user_home_stats_{user.id}")
         return response
 
 
@@ -107,22 +130,29 @@ class ReceiverUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        # Очищаем кеш после обновления получателя
-        cache.delete_pattern('*user_home_stats_*')
+        # Очищаем кеш всех пользователей, связанных с этим получателем
+        receiver = self.object
+
+        # Находим всех пользователей, у которых есть этот получатель
+        user_ids = set()
+        mailings = Mailing.objects.filter(receivers=receiver).select_related('owner')
+        for mailing in mailings:
+            if mailing.owner:
+                user_ids.add(mailing.owner.id)
+
+        # Очищаем кеш для каждого пользователя
+        for user_id in user_ids:
+            cache.delete(f"user_home_stats_{user_id}")
+
         return response
 
     def dispatch(self, request, *args, **kwargs):
-        # Проверяем права
         receiver = self.get_object()
         user = request.user
 
-        # Получатели не привязаны к владельцам, поэтому:
-        # 1. Менеджеры могут редактировать всех
-        # 2. Обычные пользователи могут редактировать только если они создали рассылку с этим получателем
         if user_is_manager(user):
             return super().dispatch(request, *args, **kwargs)
 
-        # Проверяем, есть ли у пользователя рассылки с этим получателем
         if Mailing.objects.filter(owner=user, receivers=receiver).exists():
             return super().dispatch(request, *args, **kwargs)
 
@@ -135,9 +165,22 @@ class ReceiverDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('mailing:home')
 
     def delete(self, request, *args, **kwargs):
+        # Сохраняем информацию о получателе до удаления
+        receiver = self.get_object()
+
+        # Находим всех пользователей, связанных с этим получателем
+        user_ids = set()
+        mailings = Mailing.objects.filter(receivers=receiver).select_related('owner')
+        for mailing in mailings:
+            if mailing.owner:
+                user_ids.add(mailing.owner.id)
+
         response = super().delete(request, *args, **kwargs)
-        # Очищаем кеш после удаления получателя
-        cache.delete_pattern('*user_home_stats_*')
+
+        # Очищаем кеш для каждого пользователя
+        for user_id in user_ids:
+            cache.delete(f"user_home_stats_{user_id}")
+
         return response
 
     def dispatch(self, request, *args, **kwargs):
@@ -154,7 +197,29 @@ class ReceiverDeleteView(LoginRequiredMixin, DeleteView):
         raise PermissionDenied("Вы не можете удалить этого получателя")
 
 
-# Сообщения - упрощенная версия
+class MessageListView(LoginRequiredMixin, ListView):
+    model = Message
+    template_name = 'mailing/message_list.html'
+    context_object_name = 'messages'
+
+    def get_queryset(self):
+        user = self.request.user
+
+        cache_key = f"messages_list_{user.id}"
+        cached_messages = cache.get(cache_key)
+
+        if cached_messages:
+            return cached_messages
+
+        if user_is_manager(user):
+            messages = Message.objects.select_related('owner').all()
+        else:
+            messages = Message.objects.select_related('owner').filter(owner=user)
+
+        cache.set(cache_key, messages, 60)
+        return messages
+
+
 class MessageDetail(LoginRequiredMixin, DetailView):
     model = Message
     template_name = 'mailing/message.html'
@@ -185,9 +250,11 @@ class MessageCreateView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy('mailing:home')
 
     def form_valid(self, form):
+        form.instance.owner = self.request.user
         response = super().form_valid(form)
-        # Очищаем кеш после создания сообщения
-        cache.delete_pattern('*user_home_stats_*')
+        # Очищаем кеш текущего пользователя
+        user = self.request.user
+        cache.delete(f"user_home_stats_{user.id}")
         return response
 
 
@@ -199,8 +266,20 @@ class MessageUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        # Очищаем кеш после обновления сообщения
-        cache.delete_pattern('*user_home_stats_*')
+        # Очищаем кеш всех пользователей, связанных с этим сообщением
+        message = self.object
+
+        # Находим всех пользователей, у которых есть это сообщение
+        user_ids = set()
+        mailings = Mailing.objects.filter(message=message).select_related('owner')
+        for mailing in mailings:
+            if mailing.owner:
+                user_ids.add(mailing.owner.id)
+
+        # Очищаем кеш для каждого пользователя
+        for user_id in user_ids:
+            cache.delete(f"user_home_stats_{user_id}")
+
         return response
 
     def dispatch(self, request, *args, **kwargs):
@@ -223,9 +302,22 @@ class MessageDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('mailing:home')
 
     def delete(self, request, *args, **kwargs):
+        # Сохраняем информацию о сообщении до удаления
+        message = self.get_object()
+
+        # Находим всех пользователей, связанных с этим сообщением
+        user_ids = set()
+        mailings = Mailing.objects.filter(message=message).select_related('owner')
+        for mailing in mailings:
+            if mailing.owner:
+                user_ids.add(mailing.owner.id)
+
         response = super().delete(request, *args, **kwargs)
-        # Очищаем кеш после удаления сообщения
-        cache.delete_pattern('*user_home_stats_*')
+
+        # Очищаем кеш для каждого пользователя
+        for user_id in user_ids:
+            cache.delete(f"user_home_stats_{user_id}")
+
         return response
 
     def dispatch(self, request, *args, **kwargs):
@@ -268,6 +360,20 @@ class MailingListView(LoginRequiredMixin, ListView):
         cache.set(cache_key, mailings, 60)
         return mailings
 
+class MailingAttemptListView(LoginRequiredMixin, ListView):
+    model = Mailing
+    template_name = 'mailing/mailing_attempts_list.html'
+    context_object_name = 'mailing_attempts'
+
+    def get_queryset(self):
+        user = self.request.user
+
+        mailing_attempts = MailingAttempt.objects.select_related(
+            'mailing', 'mailing__owner'
+        ).filter(mailing__owner=user)
+
+        return mailing_attempts
+
 
 class MailingDetail(OwnerOrManagerRequiredMixin, DetailView):
     model = Mailing
@@ -288,7 +394,7 @@ class MailingCreateView(LoginRequiredMixin, CreateView):
     model = Mailing
     form_class = MailingForm
     template_name = 'mailing/mailing_form.html'
-    success_url = reverse_lazy('mailing:mailing_list')
+    success_url = reverse_lazy('mailing:mailing-list')
 
     def form_valid(self, form):
         form.instance.owner = self.request.user
@@ -304,7 +410,7 @@ class MailingUpdateView(OwnerOrManagerRequiredMixin, UpdateView):
     model = Mailing
     form_class = MailingForm
     template_name = 'mailing/mailing_edit.html'
-    success_url = reverse_lazy('mailing:mailing_list')
+    success_url = reverse_lazy('mailing:mailing-list')
 
     def form_valid(self, form):
         response = super().form_valid(form)
@@ -318,7 +424,7 @@ class MailingUpdateView(OwnerOrManagerRequiredMixin, UpdateView):
 class MailingDeleteView(OwnerOrManagerRequiredMixin, DeleteView):
     model = Mailing
     template_name = 'mailing/mailing_delete.html'
-    success_url = reverse_lazy('mailing:mailing_list')
+    success_url = reverse_lazy('mailing:mailing-list')
 
     def delete(self, request, *args, **kwargs):
         mailing = self.get_object()
@@ -508,3 +614,31 @@ def mailing_disable_quick(request, pk):
         cache.delete("users_stats")
 
     return redirect('mailing:mailing')
+
+
+def start_mailing_view(request, pk):
+    """View для запуска рассылки по кнопке"""
+    mailing = get_object_or_404(Mailing, pk=pk)
+
+    # Проверка прав доступа (если нужно)
+    if not request.user.is_authenticated:
+        messages.error(request, 'Необходима авторизация')
+        return redirect('user:login')
+
+    try:
+        # Сохраняем вывод в буфер
+        out = StringIO()
+
+        # Запускаем команду
+        call_command('start_mailing', str(pk), stdout=out)
+
+        # Получаем результат
+        result = out.getvalue()
+
+        messages.success(request, f'Рассылка #{mailing.id} запущена')
+        messages.info(request, result)
+
+    except Exception as e:
+        messages.error(request, f'Ошибка запуска рассылки: {str(e)}')
+
+    return redirect('mailing:mailing', pk=pk)

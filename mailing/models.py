@@ -8,6 +8,7 @@ class ReceiverMailing(models.Model):
     email = models.EmailField(unique=True)
     full_name = models.CharField(max_length=150)
     comm = models.TextField(null=True, blank=True)
+    owner = models.ForeignKey(CustomUser, verbose_name='Владелец', on_delete=models.CASCADE, null=True)
 
     def __str__(self):
         return f'{self.email}, {self.full_name}'
@@ -15,11 +16,18 @@ class ReceiverMailing(models.Model):
     class Meta:
         verbose_name = 'получатель рассылки'
         verbose_name_plural = 'получатели рассылки'
+        permissions = [
+            # Стандартные разрешения Django будут автоматически созданы
+            # Дополнительные кастомные разрешения
+            ("can_view_all_receivers", "Может просматривать всех получателей"),
+            ("can_manage_receivers", "Может управлять получателями (для менеджеров)"),
+        ]
 
 class Message(models.Model):
 
     topic = models.CharField()
     text = models.TextField()
+    owner = models.ForeignKey(CustomUser, verbose_name='Владелец', on_delete=models.CASCADE, null=True)
 
     def __str__(self):
         return f'{self.topic}'
@@ -27,6 +35,12 @@ class Message(models.Model):
     class Meta:
         verbose_name = 'сообщение'
         verbose_name_plural = 'сообщения'
+        permissions = [
+            # Стандартные разрешения Django будут автоматически созданы
+            # Дополнительные кастомные разрешения
+            ("can_view_all_messages", "Может просматривать все сообщения"),
+            ("can_manage_messages", "Может управлять сообщениями (для менеджеров)"),
+        ]
 
 class Mailing(models.Model):
 
@@ -53,12 +67,19 @@ class Mailing(models.Model):
     class Meta:
         verbose_name = 'рассылка'
         verbose_name_plural = 'рассылки'
+        permissions = [
+            # Стандартные разрешения Django будут автоматически созданы
+            # Дополнительные кастомные разрешения
+            ("can_view_all_mailings", "Может просматривать все рассылки"),
+            ("can_disable_mailing", "Может отключать рассылки (для менеджеров)"),
+            ("can_manage_all_mailings", "Может управлять всеми рассылками"),
+        ]
 
 
 class MailingAttempt(models.Model):
     STATUS_CHOICES = [
         ('success', 'Успешно'),
-        ('failed', 'Не успешно'),
+        ('failed', 'Не успешно')
     ]
 
     attempt_time = models.DateTimeField(
@@ -88,3 +109,6 @@ class MailingAttempt(models.Model):
         verbose_name = 'попытка рассылки'
         verbose_name_plural = 'попытки рассылки'
         ordering = ['-attempt_time']
+        permissions = [
+            ("can_view_all_attempts", "Может просматривать все попытки рассылок"),
+        ]
