@@ -1,7 +1,7 @@
 from django.views.generic import DetailView, CreateView, DeleteView, TemplateView
 from mailing.forms import ReceiverForm, MessageForm, MailingForm
 from mailing.models import ReceiverMailing, Message, MailingAttempt
-from mailing.permissions import OwnerOrManagerRequiredMixin, user_is_manager
+from mailing.permissions import OwnerOrManagerRequiredMixin, user_is_manager, user_is_owner_or_manager
 from django.views.generic import ListView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import PermissionDenied
@@ -16,6 +16,7 @@ from django.core.cache import cache
 from django.db.models import Count, Q
 from io import StringIO
 from django.core.management import call_command
+from django.utils.timezone import now
 
 
 # Общие View
@@ -98,10 +99,9 @@ class ReceiverDetail(LoginRequiredMixin, DetailView):
         receiver = super().get_object(queryset)
         user = self.request.user
 
-        if user_is_manager(user):
+        if user_is_owner_or_manager(user, receiver):
             return receiver
 
-        # Проверяем, есть ли у пользователя рассылки с этим получателем
         if Mailing.objects.filter(owner=user, receivers=receiver).exists():
             return receiver
 
@@ -115,6 +115,7 @@ class ReceiverCreateView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy('mailing:home')
 
     def form_valid(self, form):
+        form.instance.owner = self.request.user
         response = super().form_valid(form)
         # Очищаем кеш текущего пользователя
         user = self.request.user
@@ -150,7 +151,7 @@ class ReceiverUpdateView(LoginRequiredMixin, UpdateView):
         receiver = self.get_object()
         user = request.user
 
-        if user_is_manager(user):
+        if user_is_owner_or_manager(user, receiver):
             return super().dispatch(request, *args, **kwargs)
 
         if Mailing.objects.filter(owner=user, receivers=receiver).exists():
@@ -188,7 +189,7 @@ class ReceiverDeleteView(LoginRequiredMixin, DeleteView):
         receiver = self.get_object()
         user = request.user
 
-        if user_is_manager(user):
+        if user_is_owner_or_manager(user, receiver):
             return super().dispatch(request, *args, **kwargs)
 
         if Mailing.objects.filter(owner=user, receivers=receiver).exists():
@@ -233,7 +234,7 @@ class MessageDetail(LoginRequiredMixin, DetailView):
         message = super().get_object(queryset)
         user = self.request.user
 
-        if user_is_manager(user):
+        if user_is_owner_or_manager(user, message):
             return message
 
         # Проверяем, использует ли пользователь это сообщение в своих рассылках
@@ -286,7 +287,7 @@ class MessageUpdateView(LoginRequiredMixin, UpdateView):
         message = self.get_object()
         user = request.user
 
-        if user_is_manager(user):
+        if user_is_owner_or_manager(user, message):
             return super().dispatch(request, *args, **kwargs)
 
         # Проверяем, использует ли пользователь это сообщение в своих рассылках
@@ -299,7 +300,9 @@ class MessageUpdateView(LoginRequiredMixin, UpdateView):
 class MessageDeleteView(LoginRequiredMixin, DeleteView):
     model = Message
     template_name = 'mailing/message_delete.html'
-    success_url = reverse_lazy('mailing:home')
+
+    def get_success_url(self):
+        return f"{reverse_lazy('mailing:home')}?t={now().timestamp()}"
 
     def delete(self, request, *args, **kwargs):
         # Сохраняем информацию о сообщении до удаления
@@ -324,7 +327,7 @@ class MessageDeleteView(LoginRequiredMixin, DeleteView):
         message = self.get_object()
         user = request.user
 
-        if user_is_manager(user):
+        if user_is_owner_or_manager(user, message):
             return super().dispatch(request, *args, **kwargs)
 
         if Mailing.objects.filter(owner=user, message=message).exists():

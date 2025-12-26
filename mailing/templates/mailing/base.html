@@ -32,7 +32,7 @@
         <form method="post" action="{% url 'user:logout' %}" style="display: inline;">
             {% csrf_token %}
             <button type="submit" class="p-2 btn btn-outline-primary">Выйти</button>
-            <a class="p-2 btn btn-outline-primary" href="/mailing/home/">Главная</a>
+            <a class="p-2 btn btn-outline-primary" href="/">Главная</a>
             <a class="p-2 btn btn-outline-primary" href="/mailing/mailing_list/">Рассылки</a>
             <a class="p-2 btn btn-outline-primary" href="/mailing/message_list/">Сообщения</a>
             <a class="p-2 btn btn-outline-primary" href="/mailing/receiver_list/">Получатели</a>

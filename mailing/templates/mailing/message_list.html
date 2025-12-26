@@ -5,11 +5,7 @@
 {% block content %}
 <div class="container">
     <h2>
-        {% if user.groups.all.0.name == 'Менеджеры' %}
-            Все сообщения
-        {% else %}
             Мои сообщения
-        {% endif %}
     </h2>
     
     <a href="{% url 'mailing:message-create' %}" class="btn btn-primary mb-3">
